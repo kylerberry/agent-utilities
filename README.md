@@ -1,110 +1,69 @@
 # Claude Utilities
 
-A methodology and toolkit for building software with AI coding agents — from raw idea to shipped product.
+A skill-based toolkit for building software with AI coding agents — installable slash commands that enforce disciplined, repeatable workflows.
 
-Two frameworks, used in sequence:
+## Skills
 
-1. **ORACLE** — structured kickoff process. Takes a raw idea through adversarial refinement, spec creation, and project scaffolding before any code is written.
-2. **CRAFTS** — execution workflow. A disciplined phase-by-phase loop for writing, reviewing, and hardening code.
+```
+skills/
+├── craft/           # Phase-gate execution workflow (C → R → A → F → T → S)
+└── craft-hitl/      # Human-in-the-loop gating at the TODO(human) seam
+```
 
----
+### `/craft` — CRAFTS Workflow
 
-## ORACLE
+Invoke for every non-trivial task. CRAFTS is a sequential phase-gate workflow: finish the current phase before moving to the next.
 
-**Originate > Red-Team > Amend > Constitution > Layout > Execute**
-
-Most AI-assisted projects fail not because of bad code, but because of bad thinking upstream. ORACLE is the process that fixes this — it forces the hard questions before a line of code exists.
-
-| Phase | What happens |
-|-------|-------------|
-| **O**riginate | Riff the raw idea with LLM A into a v1 proposal |
-| **R**ed-Team | Switch to LLM B — adversarial review of the proposal |
-| **A**mend | Return to LLM A — reconcile, fill gaps, harden. Repeat R→A until it holds |
-| **C**onstitution | Turn the proposal into a thorough product spec — the law of the project |
-| **L**ayout | Map every skill and domain the codebase will need |
-| **E**xecute | Init CLAUDE.md, install skills, generate a phased task list, begin CRAFTS |
-
-The multi-LLM red-teaming loop (R→A) is the core insight: a different model with no stake in the idea will surface assumptions your original agent rationalized away.
-
-**→ [ORACLE.md](ORACLE.md)** — prompt template, ready to paste into a new conversation.
-
----
-
-## CRAFTS
-
-**Conceptualize > Render > Assess > Fix > Tighten > Sharpen**
-
-CRAFTS is the loop you run on every task. It prevents the most common AI coding failure: generating plausible-looking code that doesn't hold up under review, security scrutiny, or real use.
+**Full flow** (business logic, multi-file work, domain boundaries):
 
 | Phase | What happens |
 |-------|-------------|
-| **C**onceptualize | `/plan` — scope, test cases, implementation plan, risks. Human reviews before proceeding. |
-| **R**ender | TDD strictly. Red → Green → Refactor. No implementation before a failing test. |
-| **A**ssess | `/simplify` — fresh-context review of the diff for quality, reuse, efficiency |
+| **C**onceptualize | Scope, test cases, implementation plan, risks before coding |
+| **R**ender | TDD strictly: Red → Green → Refactor |
+| **A**ssess | Review diff for quality, reuse, efficiency, type correctness |
 | **F**ix | Address blocking issues from Assess |
-| **T**ighten | `security-scanning-security-hardening` — scan the diff, fix all findings |
-| **S**harpen | Commit, push, update domain CLAUDE.md with lessons learned |
+| **T**ighten | Security-hardening review of the diff |
+| **S**harpen | Update docs with lessons learned; commit |
 
-Each phase uses Claude Code's built-in tools rather than custom agents — `/plan` for Conceptualize, `/simplify` for Assess. The security hardening skill is the only external dependency.
+**Lite flow** (config, scaffolding, single-file fixes): **R**ender → **S**harpen.
 
-**→ [CRAFTS.md](CRAFTS.md)** — CLAUDE.md drop-in, ready to copy into your project.
+Start lite, escalate to full if the task grows.
 
----
+### `/craft-hitl` — Human-in-the-Loop Gating
 
-## What's Included
+Invoke during **R — Render** when the issue slice requires a human at a critical decision point. This is the only required HITL gate in CRAFTS.
 
-```
-.claude/
-├── skills/
-│   └── security-scanning-security-hardening/   # Tighten phase
-├── commands/
-│   └── pr-fixup.md                             # Post-push PR cleanup
-```
+The agent scaffolds to the seam, leaves exactly one `TODO(human)` marker with specific context, then pauses. The human fills the critical logic; the agent resumes verification and completion.
 
-### `/pr-fixup` — PR Cleanup Command
+**When to pause:**
+- Issue labeled **HITL implementation** — agent scaffolds/tests, human owns critical logic
+- Issue labeled **HITL design/review** — requires human taste/content/design review
+- Subjective choice (naming, UX copy, algorithmic trade-off) explicitly reserved for human judgment
 
-A Claude Code slash command that unblocks a PR in one shot. Run `/pr-fixup [pr-number]` (or just `/pr-fixup` on the current branch) and it will:
+**When NOT to pause:** routine refactoring, clear-cut implementation, or decisions inferable from the PRD.
 
-1. **Resolve merge conflicts** — merges the base branch, reads both sides, preserves intent of both changes
-2. **Address review comments** — fixes valid feedback, drafts replies for anything it disagrees with, never silently ignores
-3. **Fix CI failures** — diagnoses lint, type check, test, and build failures and fixes the root cause (not just the symptom)
-4. **Output a summary** — tells you exactly what was fixed, what's still failing, and whether the PR is ready to merge
+## Installation
 
-Pairs naturally with the end of a CRAFTS Sharpen phase.
-
-### Copy into your project
+Copy skills into your project's `.agents/skills/` directory (or your agent's skill path):
 
 ```bash
-# Security hardening skill (required for Tighten phase)
-cp -r .claude/skills/ /path/to/your-project/.claude/skills/
-
-# PR cleanup command (optional but recommended)
-cp .claude/commands/pr-fixup.md /path/to/your-project/.claude/commands/
+cp -r skills/craft      /path/to/your-project/.agents/skills/
+cp -r skills/craft-hitl /path/to/your-project/.agents/skills/
 ```
 
-### Add CRAFTS to your CLAUDE.md
-
-See [CRAFTS.md](CRAFTS.md) for the drop-in block.
-
-### Start a new project with ORACLE
-
-See [ORACLE.md](ORACLE.md) for the prompt template.
-
----
+Then invoke with `/craft` and `/craft-hitl` from your agent interface.
 
 ## Philosophy
 
-**Planning beats replanning.** Wrong assumptions caught before code exists cost minutes. Caught after implementation they cost hours, sometimes days. Both ORACLE and CRAFTS front-load the thinking.
+**Planning beats replanning.** Wrong assumptions caught before code exists cost minutes. Caught after implementation they cost hours. CRAFTS front-loads the thinking in Conceptualize.
 
-**Different models catch different things.** ORACLE's red-team phase deliberately switches LLMs because a fresh model with no context has no incentive to rationalize your weak assumptions. It will find gaps your original model talked itself out of.
+**Self-review is impossible.** The builder can't see their own blind spots. The Assess and Tighten phases are fresh-context reviews because the agent that wrote the code is the worst reviewer of it.
 
-**Self-review is impossible.** The builder can't see their own blind spots. CRAFTS uses `/simplify` — a fresh-context review pass — specifically because the agent that wrote the code is the worst reviewer of it.
+**Security is a gate, not an afterthought.** Tighten runs before every commit. Vulnerabilities found pre-commit cost minutes; found post-deploy they cost far more.
 
-**Security is a gate, not an afterthought.** The Tighten phase runs before every commit. Vulnerabilities found pre-commit cost minutes. Found post-deploy they cost far more.
+**Knowledge compounds.** Sharpen updates domain docs with lessons learned after every task. Week 1 those files are stubs. Week 8 they're handbooks that make every subsequent task faster and less error-prone.
 
-**Knowledge compounds.** The Sharpen phase updates domain CLAUDE.md files with lessons learned after every task. Week 1 those files are stubs. Week 8 they're handbooks that make every subsequent task faster and less error-prone.
-
----
+**The right human at the right seam.** HITL gating isn't about distrusting the agent — it's about reserving human judgment for the decisions that actually need it, while the agent handles everything else autonomously.
 
 ## License
 
