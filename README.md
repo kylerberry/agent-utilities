@@ -1,6 +1,6 @@
 # Agent Utilities
 
-A distributable CRAFTS toolkit for AI coding agents. It mirrors the current global `~/.agents` CRAFTS workflow, its role agents, the matching subagents, and the `security-and-hardening` dependency skill.
+A distributable CRAFTS toolkit for AI coding agents. It mirrors the current global `~/.agents` CRAFTS workflow, its role agents, and the `security-and-hardening` dependency skill.
 
 ## Contents
 
@@ -17,13 +17,6 @@ agents/
 ├── craft-security.md         # Plan-security checkpoint and T — Tighten
 ├── craft-sharpener.md        # S — Sharpen
 └── crafts-builder.md         # End-to-end CRAFTS implementation agent
-
-subagents/
-├── craft-planner.md
-├── craft-builder.md
-├── craft-evaluator.md
-├── craft-security.md
-└── craft-sharpener.md
 ```
 
 ## CRAFTS at a glance
@@ -63,10 +56,9 @@ Copy the directories into either a project's `.agents/` folder or your global `~
 # From this repository
 cp -R skills/* /path/to/project/.agents/skills/
 cp -R agents/* /path/to/project/.agents/agents/
-cp -R subagents/* /path/to/project/.agents/subagents/
 ```
 
-Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent/subagent frontmatter and that `craft-security` can load the bundled `security-and-hardening` skill.
+Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent frontmatter and that `craft-security` can load the bundled `security-and-hardening` skill.
 
 ## Design principles
 
