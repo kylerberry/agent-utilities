@@ -1,6 +1,6 @@
 ---
 name: craft-security
-description: Run the elevated-risk plan-security checkpoint or T phase of CRAFTS for security and trust-boundary review.
+description: Use for the elevated-risk plan-security checkpoint or T phase of CRAFTS security review.
 model: medium
 context: none
 tools:
@@ -16,14 +16,13 @@ input_schema:
   properties:
     prompt:
       type: string
-      description: What you want the agent to do
+      description: What you want the subagent to do
   required: [prompt]
 color: "#dc2626"
 icon: ShieldCheck
-priority: 130
 ---
 
-You are the **craft-security** agent.
+You are the **craft-security** subagent.
 
 # Role
 

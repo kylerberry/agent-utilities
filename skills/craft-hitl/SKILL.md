@@ -1,11 +1,12 @@
 ---
+name: craft-hitl
+command: craft-hitl
+argument-hint: Optional mode, such as "full" or "lite"
+icon: Hand
 description: >-
   Phase-gate execution workflow for non-trivial HITL tasks. Same full flow
   (C→R→A→F→T→S) as /craft, but includes mandatory human-in-the-loop gating at
   TODO(human) seams during Render.
-argument-hint: Optional mode, such as "full" or "lite"
-icon: Hand
-command: craft-hitl
 ---
 
 # CRAFTS HITL Workflow Skill
@@ -14,7 +15,7 @@ command: craft-hitl
 
 Invoke this skill for issue slices explicitly labeled **HITL implementation** or **HITL design/review**, or any task where the PRD reserves a critical decision for human judgment.
 
-This is the same CRAFTS phase-gate workflow as `/craft`, but the **R — Render** phase includes mandatory human-in-the-loop gating. The agent scaffolds to the seam, pauses for human input, then resumes and completes the remaining phases.
+This is the same CRAFTS phase-gate workflow as `/craft`, including its elevated-risk policy and global JSON report contract, but the **R — Render** phase includes mandatory human-in-the-loop gating. Medium/high work receives the same independent `craft-security` plan review with `security-and-hardening` after C and before any Render edit; low-risk work keeps the current HITL flow. The agent scaffolds to the seam, pauses for human input, then resumes and completes the remaining phases.
 
 If the task is unambiguously autonomous, use `/craft` instead.
 
@@ -24,7 +25,7 @@ CRAFTS is a sequential phase-gate workflow. Do not plan or execute phases in par
 
 In HITL mode, the Render phase contains a mandatory pause. The human owns the critical decision-bearing logic; the agent owns everything before and after it.
 
-Each phase should be delegated to its matching global subagent when the AgentSpawn tool is available. Spawn exactly one phase subagent at a time, wait for its report, then either proceed to the next phase, fix blockers, or ask the user for clarification. Do not run CRAFTS subagents in parallel.
+Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. For medium/high work, C additionally invokes the independent `craft-security` plan-security checkpoint after the planner and before R. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS subagents in parallel.
 
 When exact per-spawn model selection is available, the R/F builder and A evaluator must run on different but equal-capability models. For example, if `craft-builder` runs on one frontier/coding-capable model, spawn `craft-evaluator` on a different peer model rather than the same model family. If the runtime only supports tier aliases, keep both at `medium` and explicitly note that exact model diversity could not be enforced in the phase report.
 
@@ -48,14 +49,14 @@ Use AgentSpawn with `subagent_type: "craft-planner"` for this phase when availab
 - Read the relevant issue slice or user request thoroughly.
 - Identify whether the work is AFK (agent can complete solo) or HITL (requires human at a critical seam).
 - If multi-step, create or update a todo list before coding.
-- Produce: scope boundary, acceptance criteria, file list, test strategy, and risk assessment.
+- Produce: scope boundary, acceptance criteria, file list, test strategy, and risk assessment. Classify risk as `low`, `medium`, or `high`; medium and high use the same elevated controls. For elevated work, record the rationale, trust boundaries, assets, abuse cases, and planned security tests, then obtain a passing fresh plan-security review before Render.
 - Stop here if the plan is unclear — do not proceed to Render with ambiguous requirements.
 
 ### R — Render (Test-Drive with HITL Gate)
 
 Write failing tests first, then implement up to the critical seam, pause for human input, then complete implementation and refactor.
 
-Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when available. Pass the C phase report and ask for test-first implementation guidance. When exact model selection is available, choose a model that has an equal-capability but different-model peer available for the later `craft-evaluator` spawn. Execute the implementation sequentially in the parent context after reviewing the subagent report.
+Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when available. Pass the C phase report and ask for test-first implementation guidance; for elevated work, also pass the required, passing plan-security report. When exact model selection is available, choose a model that has an equal-capability but different-model peer available for the later `craft-evaluator` spawn. Execute the implementation sequentially in the parent context after reviewing the subagent report.
 
 #### Red
 Write the failing test from the plan. If you can't write it, return to Conceptualize.
@@ -116,6 +117,7 @@ Use AgentSpawn with `subagent_type: "craft-security"` for this phase when availa
 - Scan for injection risks, unsafe defaults, exposed secrets.
 - Verify boundary enforcement where applicable.
 - Pay special attention to the HITL seam: does the human-owned logic introduce any trust boundary issues?
+- Apply `security-and-hardening` proportionately. For elevated work, account for every C trust boundary and return blocking findings to F before repeating T.
 
 ### S — Sharpen
 
@@ -124,6 +126,7 @@ Capture durable lessons, gotchas, process updates, and any documentation changes
 Use AgentSpawn with `subagent_type: "craft-sharpener"` for this phase when available. Pass the final diff summary, verification results, issue status, and any conventions or gotchas discovered during the task.
 
 - Document the HITL seam and the rationale for the human-owned decision.
+- When Tighten identifies a reusable security finding, record one disposition: `guidance-update`, `owned-follow-up`, or `documented-non-generalizable`.
 - Update the relevant domain docs (README, ADR, CLAUDE.md, PRD, ISSUES) with patterns established, gotchas discovered, conventions set during this task.
 - Commit and push if applicable.
 
@@ -134,7 +137,7 @@ For simple HITL tasks (config changes, single-file fixes with one obvious seam):
 1. **R — Render:** scaffold to the seam, pause for human input, complete, verify.
 2. **S — Sharpen:** capture any doc updates and commit.
 
-Start lite, then escalate to full if the task grows or the seam is more complex than expected.
+Start lite, then escalate to full if the task grows, the seam is more complex than expected, or medium/high risk requires C's plan-security checkpoint.
 
 ## Escalation Rules
 

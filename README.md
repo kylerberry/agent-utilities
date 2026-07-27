@@ -1,89 +1,80 @@
 # Agent Utilities
 
-A skill-based toolkit for building software with AI coding agents — installable slash commands and primary agents that enforce disciplined, repeatable workflows.
+A distributable CRAFTS toolkit for AI coding agents. It mirrors the current global `~/.agents` CRAFTS workflow, its role agents, the matching subagents, and the `security-and-hardening` dependency skill.
 
-## Skills
+## Contents
 
-```
+```text
 skills/
-├── craft/           # Autonomous phase-gate execution (C → R → A → F → T → S)
-└── craft-hitl/      # Same flow with mandatory human-in-the-loop gating at TODO(human) seams
-```
+├── craft/                    # Autonomous CRAFTS workflow
+├── craft-hitl/               # CRAFTS with a TODO(human) Render seam
+└── security-and-hardening/   # Threat modeling and secure-code review guidance
 
-### `/craft` — Autonomous CRAFTS Workflow
-
-Invoke for every non-trivial task that can be completed without human judgment at a critical seam.
-
-CRAFTS is a sequential phase-gate workflow: finish the current phase before moving to the next. Do not run phases in parallel.
-
-**Full flow** (business logic, multi-file work, domain boundaries):
-
-| Phase | Subagent | What happens |
-|-------|----------|-------------|
-| **C**onceptualize | `craft-planner` | Scope, test cases, implementation plan, risks before coding |
-| **R**ender | `craft-builder` | TDD strictly: Red → Green → Refactor |
-| **A**ssess | `craft-evaluator` | Review diff for quality, reuse, efficiency, type correctness |
-| **F**ix | `craft-builder` | Address blocking issues from Assess |
-| **T**ighten | `craft-security` | Security-hardening review of the diff |
-| **S**harpen | `craft-sharpener` | Update docs with lessons learned; commit |
-
-**Lite flow** (config, scaffolding, single-file fixes): **R**ender → **S**harpen.
-
-Start lite, escalate to full if the task grows.
-
-**Builder / Evaluator model diversity:** When exact per-spawn model selection is available, the R/F `craft-builder` and A `craft-evaluator` must run on different but equal-capability models. If only tier aliases are supported, both remain at `medium` and the phase report notes that exact diversity could not be enforced.
-
-### `/craft-hitl` — Human-in-the-Loop CRAFTS Workflow
-
-Invoke for issue slices labeled **HITL implementation** or **HITL design/review**, or any task where the PRD reserves a critical decision for human judgment.
-
-Identical to `/craft`, but **R — Render** contains a mandatory pause. The agent scaffolds to the seam, leaves exactly one `TODO(human)` marker with specific context, then pauses. The human fills the critical logic; the agent resumes verification and completion.
-
-**When to pause:**
-- Issue labeled **HITL implementation** — agent scaffolds/tests, human owns critical logic
-- Issue labeled **HITL design/review** — requires human taste/content/design review
-- Subjective choice (naming, UX copy, algorithmic trade-off) explicitly reserved for human judgment
-
-**When NOT to pause:** routine refactoring, clear-cut implementation, or decisions inferable from the PRD.
-
-If a task starts as HITL but the human defers the decision back to the agent, switch to `/craft` and complete autonomously.
-
-## Agents
-
-```
 agents/
-├── craft-planner/     # C phase — scope, tests, risks, plan
-├── craft-builder/     # R/F phases — test-driven implementation and fixes
-├── craft-evaluator/   # A phase — diff review, simplification, verification
-├── craft-security/    # T phase — security and trust-boundary review
-└── craft-sharpener/   # S phase — durable docs, standards, learnings
+├── craft-planner.md          # C — Conceptualize
+├── craft-builder.md          # R/F — Render and Fix
+├── craft-evaluator.md        # A — Assess
+├── craft-security.md         # Plan-security checkpoint and T — Tighten
+├── craft-sharpener.md        # S — Sharpen
+└── crafts-builder.md         # End-to-end CRAFTS implementation agent
+
+subagents/
+├── craft-planner.md
+├── craft-builder.md
+├── craft-evaluator.md
+├── craft-security.md
+└── craft-sharpener.md
 ```
 
-These are primary agents with `priority` fields. They appear in the agent picker and can be chatted with directly. They are also spawned on-demand by the `/craft` and `/craft-hitl` skills via `AgentSpawn`.
+## CRAFTS at a glance
+
+CRAFTS is a sequential delivery workflow:
+
+`C → R → A → F → T → S`
+
+| Phase | Role | Purpose |
+| --- | --- | --- |
+| **C**onceptualize | `craft-planner` | Scope, acceptance criteria, tests, plan, and risks |
+| **R**ender | `craft-builder` | Test-first implementation: Red → Green → Refactor |
+| **A**ssess | `craft-evaluator` | Independent review of implementation and tests |
+| **F**ix | `craft-builder` | Minimal fixes for blocking findings |
+| **T**ighten | `craft-security` | Security review with `security-and-hardening` |
+| **S**harpen | `craft-sharpener` | Durable documentation and process learning |
+
+Use `/craft` for autonomous work. Use `/craft-hitl` when Render must pause at a specific `TODO(human)` seam.
+
+### Elevated-risk work
+
+C classifies full-flow work as `low`, `medium`, or `high`. Medium and high use the same elevated controls:
+
+1. C records the risk rationale, trust boundaries, assets, abuse cases, and planned security tests.
+2. A fresh, independent `craft-security` **plan-security** review runs after C and before R.
+3. Render cannot begin until that review reports `status: "passed"`.
+4. Tighten maps every declared trust boundary to evidence, a finding, or explicit non-applicability.
+5. Sharpen records one disposition—`guidance-update`, `owned-follow-up`, or `documented-non-generalizable`—only when Tighten finds a reusable security issue.
+
+Low-risk work retains the normal CRAFTS and lite-flow behavior. The included global roles use JSON C, plan-security, and Tighten reports; these are workflow contracts, not a substitute for runtime enforcement.
 
 ## Installation
 
-Copy skills and agents into your project's `.agents/` directory (or your agent's global path):
+Copy the directories into either a project's `.agents/` folder or your global `~/.agents/` folder:
 
 ```bash
-cp -r skills/craft      /path/to/your-project/.agents/skills/
-cp -r skills/craft-hitl /path/to/your-project/.agents/skills/
-cp -r agents/*          /path/to/your-project/.agents/agents/
+# From this repository
+cp -R skills/* /path/to/project/.agents/skills/
+cp -R agents/* /path/to/project/.agents/agents/
+cp -R subagents/* /path/to/project/.agents/subagents/
 ```
 
-Then invoke with `/craft` and `/craft-hitl` from your agent interface.
+Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent/subagent frontmatter and that `craft-security` can load the bundled `security-and-hardening` skill.
 
-## Philosophy
+## Design principles
 
-**Planning beats replanning.** Wrong assumptions caught before code exists cost minutes. Caught after implementation they cost hours. CRAFTS front-loads the thinking in Conceptualize.
-
-**Self-review is impossible.** The builder can't see their own blind spots. The Assess and Tighten phases are fresh-context reviews because the agent that wrote the code is the worst reviewer of it.
-
-**Security is a gate, not an afterthought.** Tighten runs before every commit. Vulnerabilities found pre-commit cost minutes; found post-deploy they cost far more.
-
-**Knowledge compounds.** Sharpen updates domain docs with lessons learned after every task. Week 1 those files are stubs. Week 8 they're handbooks that make every subsequent task faster and less error-prone.
-
-**The right human at the right seam.** HITL gating isn't about distrusting the agent — it's about reserving human judgment for the decisions that actually need it, while the agent handles everything else autonomously.
+- **Acceptance criteria remain the reference.** Assess reviews the test suite against original criteria, not just passing tests.
+- **Independent review reduces correlated blind spots.** Builders do not approve their own work; elevated plan review is independent of planning and implementation.
+- **Security starts in planning.** Threat boundaries and abuse cases are considered before code exists, then rechecked against the final diff.
+- **Knowledge compounds.** Sharpen records durable lessons without turning ordinary fixes into documentation churn.
+- **Humans own consequential judgment.** HITL reserves explicit seams for people while the agent handles surrounding implementation and verification.
 
 ## License
 

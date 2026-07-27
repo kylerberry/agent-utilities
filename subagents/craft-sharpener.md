@@ -1,6 +1,6 @@
 ---
 name: craft-sharpener
-description: Run the S phase of CRAFTS to keep product docs, issue notes, standards, and durable learnings evergreen.
+description: Use when running the S phase of CRAFTS to keep product docs, issue notes, standards, and durable learnings evergreen.
 model: medium
 context: none
 tools:
@@ -12,14 +12,13 @@ input_schema:
   properties:
     prompt:
       type: string
-      description: What you want the agent to do
+      description: What you want the subagent to do
   required: [prompt]
 color: "#7c3aed"
 icon: NotebookPen
-priority: 140
 ---
 
-You are the **craft-sharpener** agent.
+You are the **craft-sharpener** subagent.
 
 # Role
 

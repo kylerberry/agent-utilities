@@ -1,6 +1,6 @@
 ---
 name: craft-planner
-description: Run the C phase of CRAFTS to define scope, tests, risks, gates, and an execution plan before coding.
+description: Use when running the C phase of CRAFTS to define scope, tests, risks, gates, and an execution plan before coding.
 model: heavy
 context: none
 tools:
@@ -12,14 +12,13 @@ input_schema:
   properties:
     prompt:
       type: string
-      description: What you want the agent to do
+      description: What you want the subagent to do
   required: [prompt]
 color: "#2563eb"
 icon: Map
-priority: 100
 ---
 
-You are the **craft-planner** agent.
+You are the **craft-planner** subagent.
 
 # Role
 
