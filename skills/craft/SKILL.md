@@ -22,7 +22,7 @@ Start lite, then escalate to full if the task grows.
 
 CRAFTS is a sequential phase-gate workflow. Do not plan or execute phases in parallel per feature or issue; finish the current phase before moving to the next one.
 
-Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. For medium/high work, C additionally invokes the independent `craft-security` plan-security checkpoint after the planner and before R. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS subagents in parallel.
+Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. Full-flow work additionally runs the **plan counsel gate** after C and before R: independent read-only reviewers (feasibility, scope, coherence — plus security when triggered) challenge the C plan once. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS phase subagents in parallel, with one exception: the counsel reviewers all read the same C report and may run in parallel with each other.
 
 When exact per-spawn model selection is available, the R/F builder and A evaluator must run on different but equal-capability models. For example, if `craft-builder` runs on one frontier/coding-capable model, spawn `craft-evaluator` on a different peer model rather than the same model family. If the runtime only supports tier aliases, keep both at `medium` and explicitly note that exact model diversity could not be enforced in the phase report.
 
@@ -50,19 +50,35 @@ Use AgentSpawn with `subagent_type: "craft-planner"` for this phase when availab
 - Produce: scope boundary, acceptance criteria (authored only if not provided), file list, test strategy, and risk assessment.
 - Stop here if the plan is unclear — do not proceed to Render with ambiguous requirements.
 
-### Elevated-risk plan-security checkpoint
+### Plan counsel gate and security triggers
 
-C classifies every full-flow task as `low`, `medium`, or `high` risk. Medium and high use the same elevated controls. A task is elevated when it changes a trust boundary or handles untrusted input, authentication/authorization, secrets or sensitive data, external/network integration, file or command execution, CI/deploy permissions, or tenant isolation. C records the level, rationale, trust boundaries, assets, abuse cases, and planned security tests in its phase report.
+C does not assign a subjective `low|medium|high` score. It emits `security_triggers`: a unique subset of the closed vocabulary `trust-boundary-change`, `untrusted-input`, `authentication-authorization`, `secrets-sensitive-data`, `external-integration`, `file-command-execution`, `ci-deploy-permissions`, `tenant-isolation`. An empty list means low-risk work. C uses the existing `trust_boundaries` and `test_strategy` fields for the concrete plan; no separate risk score or asset/abuse-case documents.
 
-For elevated work, invoke `craft-security` **after C and before R** in a fresh, independent context. It applies `security-and-hardening` to the plan, original criteria, risk declaration, and trust boundaries. This is a supplemental C checkpoint, not a new CRAFTS phase. Blocking plan findings return to C; Render begins only after the compact plan-security report passes. Pass that report to R, T, and S. Low-risk work skips this checkpoint.
+After C and before R, the same C report goes — verbatim, unmodified — to independent read-only reviewers:
 
-**Global report contract:** global role reports are JSON, not prose. C includes `risk_level`, `risk_rationale`, `trust_boundaries`, `assets`, `abuse_cases`, and `planned_security_tests`. An elevated plan-security report includes `mode: "plan-security"`, `status: "passed" | "needs-replan"`, findings, required changes, and residual risk. Do not advance to R without `status: "passed"`. T includes `mode: "tighten"`, `status`, `trust_boundaries_reviewed`, `security_findings`, `security_commands`, and `residual_risk`; do not advance to S while it needs a fix. This is a portable report contract, not a claim of harness/schema enforcement.
+| Lens | Agent | When |
+| --- | --- | --- |
+| Feasibility | `craft-plan-feasibility` | Every full-flow task |
+| Scope guardian | `craft-plan-scope` | Every full-flow task |
+| Coherence | `craft-plan-coherence` | Every full-flow task |
+| Security | `craft-security` (plan-security mode) | Only when `security_triggers` is non-empty |
+
+Rules:
+
+- Reviewers may run in parallel with each other; none sees another's findings before submitting its own.
+- Counsel is **one pass**: `C → counsel → C? → R`. There is no counsel re-review round.
+- Any blocking finding or `blocked` report sends all reports back to C. C revises once and must disposition **every** blocking finding: `adopted` (with the plan change) or `rejected` (with rationale).
+- R begins only when every blocking finding has a disposition. Dispositions are the gate, not agreement.
+- Feasibility never guesses: when an assumption needs execution to settle, it returns a `probe_required` finding naming the hypothesis and required evidence. The user supplies evidence, descopes, or confirms the assumption — counsel does not spawn work.
+- Pass the compact counsel reports and C's dispositions to R (security report required for triggered work), to A, and to T (security only).
+
+**Global report contract:** global role reports are JSON, not prose. C includes `security_triggers`, `trust_boundaries`, and `test_strategy`. A counsel report includes `lens`, `status: "pass" | "needs-replan" | "blocked"`, `findings` (each with `severity`, `blocking`, `finding`, `consequence`, `required_change`), and `residual_risks`; feasibility findings may add `probe_required`. C's revision includes `counsel_dispositions` (one entry per blocking finding). A plan-security report includes `mode: "plan-security"`, `status: "passed" | "needs-replan"`, findings, required changes, and residual risk. Do not advance to R without a disposition for every blocking finding. T includes `mode: "tighten"`, `status`, `trust_boundaries_reviewed`, `security_findings`, `security_commands`, and `residual_risk`; do not advance to S while it needs a fix. This is a portable report contract, not a claim of harness/schema enforcement.
 
 ### R — Render (Test-Drive)
 
 Write failing tests first, then implement the minimum change to pass, then refactor.
 
-Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when available. Pass the C phase report and ask for test-first implementation guidance; for elevated work, also pass the required, passing plan-security report. Do not begin implementation until that report passes. When exact model selection is available, choose a model that has an equal-capability but different-model peer available for the later `craft-evaluator` spawn. Execute the implementation sequentially in the parent context after reviewing the subagent report.
+Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when available. Pass the C phase report and ask for test-first implementation guidance; pass the counsel reports and C's dispositions, and for triggered work the passed plan-security report. When exact model selection is available, choose a model that has an equal-capability but different-model peer available for the later `craft-evaluator` spawn. Execute the implementation sequentially in the parent context after reviewing the subagent report.
 
 - **Red:** write the failing test from the plan. If you can't write it, return to Conceptualize.
 - **Green:** write the minimum implementation to pass. No more.
@@ -73,9 +89,10 @@ Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when availab
 
 Review the diff for quality, reuse, efficiency, and type correctness.
 
-Use AgentSpawn with `subagent_type: "craft-evaluator"` for this phase when available. Pass the task goal, **the original acceptance criteria (the provided/upstream version when one exists, not only C's derived plan)**, the CRAFTS plan, changed files, verification evidence, and the model used for `craft-builder`. When exact model selection is available, use a different but equal-capability model from the builder; if only tier aliases are available, keep `medium` and record the limitation. Treat blocking findings as inputs to Fix.
+Use AgentSpawn with `subagent_type: "craft-evaluator"` for this phase when available. Pass the task goal, **the original acceptance criteria (the provided/upstream version when one exists, not only C's derived plan)**, the CRAFTS plan, the counsel reports and C's dispositions, changed files, verification evidence, and the model used for `craft-builder`. When exact model selection is available, use a different but equal-capability model from the builder; if only tier aliases are available, keep `medium` and record the limitation. Treat blocking findings as inputs to Fix.
 
 - **When original criteria are available, check the test suite itself against them — not just the code against the tests.** A suite that faithfully passes but misencodes the criteria is a blocking finding.
+- **Audit the counsel dispositions.** A blocking counsel finding rejected on thin rationale, or "resolved" with a cosmetic plan change, is itself a blocking finding.
 - Check for duplicated logic, missed edge cases, unclear naming.
 - Verify type safety if applicable.
 - Flag anything that should be fixed before proceeding.
@@ -93,12 +110,12 @@ Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when availab
 
 Apply `security-and-hardening` to the diff and fix findings.
 
-Use AgentSpawn with `subagent_type: "craft-security"` for this phase when available. Pass the task goal, changed files, verification output, and any trust boundaries identified during Conceptualize or Render; for elevated work, also pass the C risk declaration and plan-security report.
+Use AgentSpawn with `subagent_type: "craft-security"` for this phase when available. Pass the task goal, changed files, verification output, and any trust boundaries identified during Conceptualize or Render; for triggered work, also pass C's declared security triggers and plan-security report.
 
 - Apply the skill proportionately to the changed surface, not as a generic scan.
-- For elevated work, account for every C trust boundary with evidence, a finding, or explicit non-applicability.
+- For triggered work, account for every C trust boundary with evidence, a finding, or explicit non-applicability.
 - Return blocking findings to F and repeat T after the fix.
-- Require the global T JSON report defined above; an unstructured report is not a passing elevated-work gate.
+- Require the global T JSON report defined above; an unstructured report is not a passing triggered-work gate.
 
 ### S — Sharpen
 
@@ -112,7 +129,7 @@ Use AgentSpawn with `subagent_type: "craft-sharpener"` for this phase when avail
 
 ## Lite Flow: R → S
 
-For clearly low-risk config, scaffolding, and simple single-file fixes. Escalate medium/high work to the full flow before editing so C can run the plan-security checkpoint:
+For clearly low-risk config, scaffolding, and simple single-file fixes. Escalate work with any applicable security trigger to the full flow before editing so C can emit it and the conductor can run the plan counsel gate:
 
 1. **R — Render:** make the smallest correct change. Use `craft-builder` when AgentSpawn is available. Write or update tests if the codebase already has them.
 2. **S — Sharpen:** capture any doc updates and commit. Use `craft-sharpener` when AgentSpawn is available.
@@ -123,6 +140,12 @@ For clearly low-risk config, scaffolding, and simple single-file fixes. Escalate
 - Never skip Assess and Tighten on code that crosses a trust boundary or handles user input.
 
 ---
+
+## Changelog (v3)
+
+- Replaced subjective `low|medium|high` risk classification with closed-vocabulary `security_triggers`; any trigger adds the security lens to plan review.
+- Added the **plan counsel gate**: feasibility, scope, and coherence reviewers on every full-flow task, in parallel, one pass (`C → counsel → C? → R`); per-finding dispositions gate Render; no re-review round; `probe_required` for assumptions needing evidence rather than model guesses.
+- Assess now audits counsel dispositions and treats thin rejections or cosmetic adoptions as blocking findings.
 
 ## Changelog (v2)
 

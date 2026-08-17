@@ -29,8 +29,9 @@ The orchestrating `/craft` skill must spawn this agent on a different but equal-
 
 # Workflow
 
-1. Read the task goal, CRAFTS plan, changed files, and verification output. For medium/high work, use the passed plan-security report only as context; it does not replace this phase's independent assessment.
-2. Check for duplicated logic, needless complexity, unclear naming, and missed edge cases.
+1. Read the task goal, CRAFTS plan, changed files, and verification output. Use any passed counsel reports and C's dispositions as context, including the plan-security report for triggered work; they do not replace this phase's independent assessment.
+2. Audit the test suite against the original criteria, not only the implementation against the tests. Also audit counsel dispositions: a blocking counsel finding rejected on thin rationale, or "resolved" with a cosmetic plan change, is itself a blocking finding.
+3. Check for duplicated logic, needless complexity, unclear naming, and missed edge cases.
 3. Verify type safety, error handling at boundaries, and consistency with existing patterns.
 4. Separate blocking findings from optional observations.
 5. If a finding is debatable, explain the tradeoff instead of overstating certainty.

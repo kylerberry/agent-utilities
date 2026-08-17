@@ -15,7 +15,7 @@ description: >-
 
 Invoke this skill for issue slices explicitly labeled **HITL implementation** or **HITL design/review**, or any task where the PRD reserves a critical decision for human judgment.
 
-This is the same CRAFTS phase-gate workflow as `/craft`, including its elevated-risk policy and global JSON report contract, but the **R — Render** phase includes mandatory human-in-the-loop gating. Medium/high work receives the same independent `craft-security` plan review with `security-and-hardening` after C and before any Render edit; low-risk work keeps the current HITL flow. The agent scaffolds to the seam, pauses for human input, then resumes and completes the remaining phases.
+This is the same CRAFTS phase-gate workflow as `/craft`, including its plan counsel gate, security-trigger policy, and global JSON report contract, but the **R — Render** phase includes mandatory human-in-the-loop gating. Work with non-empty `security_triggers` receives the same independent `craft-security` plan review with `security-and-hardening` after C and before any Render edit; untriggered work keeps the current HITL flow. The agent scaffolds to the seam, pauses for human input, then resumes and completes the remaining phases.
 
 If the task is unambiguously autonomous, use `/craft` instead.
 
@@ -25,7 +25,7 @@ CRAFTS is a sequential phase-gate workflow. Do not plan or execute phases in par
 
 In HITL mode, the Render phase contains a mandatory pause. The human owns the critical decision-bearing logic; the agent owns everything before and after it.
 
-Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. For medium/high work, C additionally invokes the independent `craft-security` plan-security checkpoint after the planner and before R. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS subagents in parallel.
+Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. Full-flow work runs the same plan counsel gate as `/craft` — `craft-plan-feasibility`, `craft-plan-scope`, and `craft-plan-coherence` on every task, plus `craft-security` in plan-security mode when `security_triggers` is non-empty — after C and before R. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS subagents in parallel, except the counsel reviewers with each other.
 
 When exact per-spawn model selection is available, the R/F builder and A evaluator must run on different but equal-capability models. For example, if `craft-builder` runs on one frontier/coding-capable model, spawn `craft-evaluator` on a different peer model rather than the same model family. If the runtime only supports tier aliases, keep both at `medium` and explicitly note that exact model diversity could not be enforced in the phase report.
 
@@ -49,7 +49,7 @@ Use AgentSpawn with `subagent_type: "craft-planner"` for this phase when availab
 - Read the relevant issue slice or user request thoroughly.
 - Identify whether the work is AFK (agent can complete solo) or HITL (requires human at a critical seam).
 - If multi-step, create or update a todo list before coding.
-- Produce: scope boundary, acceptance criteria, file list, test strategy, and risk assessment. Classify risk as `low`, `medium`, or `high`; medium and high use the same elevated controls. For elevated work, record the rationale, trust boundaries, assets, abuse cases, and planned security tests, then obtain a passing fresh plan-security review before Render.
+- Produce: scope boundary, acceptance criteria, file list, test strategy, and risk assessment. Emit `security_triggers` from the closed vocabulary (`trust-boundary-change`, `untrusted-input`, `authentication-authorization`, `secrets-sensitive-data`, `external-integration`, `file-command-execution`, `ci-deploy-permissions`, `tenant-isolation`) using the `trust_boundaries` and `test_strategy` fields for the concrete plan; do not assign a risk score. Run the plan counsel gate and disposition every blocking finding before Render.
 - Stop here if the plan is unclear — do not proceed to Render with ambiguous requirements.
 
 ### R — Render (Test-Drive with HITL Gate)
@@ -137,7 +137,7 @@ For simple HITL tasks (config changes, single-file fixes with one obvious seam):
 1. **R — Render:** scaffold to the seam, pause for human input, complete, verify.
 2. **S — Sharpen:** capture any doc updates and commit.
 
-Start lite, then escalate to full if the task grows, the seam is more complex than expected, or medium/high risk requires C's plan-security checkpoint.
+Start lite, then escalate to full if the task grows, the seam is more complex than expected, or any closed-vocabulary security trigger applies so C can emit it and the plan counsel gate can run.
 
 ## Escalation Rules
 

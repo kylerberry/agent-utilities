@@ -79,12 +79,12 @@ When the user asks to execute an issue, start an issue, continue the backlog, or
 
 - Use Lite CRAFTS only for clearly low-risk, trivial single-file docs/config/scaffolding changes.
 - Use Full CRAFTS for business logic, CLI behavior, persistence, security-sensitive config, tests, or multi-file changes.
-- In C, classify risk as `low`, `medium`, or `high`. Medium and high use the same elevated controls. Elevated work includes changed trust boundaries; untrusted input; auth/authz; secrets or sensitive data; external/network integration; file or command execution; CI/deploy permissions; or tenant isolation.
+- In C, emit `security_triggers`: a unique subset of the closed vocabulary `trust-boundary-change`, `untrusted-input`, `authentication-authorization`, `secrets-sensitive-data`, `external-integration`, `file-command-execution`, `ci-deploy-permissions`, `tenant-isolation`. An empty list means low-risk work; any trigger adds the security lens to plan review.
 
 3. Create explicit phase tasks for the chosen flow before coding, ordered as sequential gates.
-4. Complete each CRAFTS phase before starting the next one; do not plan or run phases in parallel per feature or issue.
-5. Complete `C — Conceptualize` before `R — Render` for Full CRAFTS work. For medium/high work, record the rationale, trust boundaries, assets, abuse cases, and planned security tests, then spawn `craft-security` in a fresh independent context to apply `security-and-hardening` to the plan. Treat this as a supplemental C checkpoint: return blocking findings to C and do not begin R until the plan-security report passes.
-6. During `R — Render`, write or update tests before implementation unless the task is docs-only or the repo has no tests. For elevated work, pass the plan-security report forward.
+4. Complete each CRAFTS phase before starting the next one; do not plan or run phases in parallel per feature or issue (the plan counsel reviews are the one exception — they read the same C report and may run in parallel with each other).
+5. Complete `C — Conceptualize` before `R — Render` for Full CRAFTS work, then run the **plan counsel gate**: send the C report verbatim to `craft-plan-feasibility`, `craft-plan-scope`, and `craft-plan-coherence` in fresh independent contexts, plus `craft-security` (plan-security mode) when `security_triggers` is non-empty. Counsel is one pass — any blocking finding returns all reports to C, which revises once and dispositions every blocking finding (`adopted` with the plan change, or `rejected` with rationale). Do not begin R until every blocking finding has a disposition. A feasibility `probe_required` finding means the user supplies evidence, descopes, or confirms the assumption.
+6. During `R — Render`, write or update tests before implementation unless the task is docs-only or the repo has no tests. Pass the counsel reports and dispositions forward; for triggered work, pass the plan-security report.
 7. Execute implementation directly with build-agent discipline unless a bounded research/support subagent is clearly useful; review all subagent output before advancing phases.
 8. During `R — Render`, when the issue/task defines human-owned critical implementation, place a `TODO(human)` seam for that portion, stop before implementing it, and wait for the human-owned work; do not work around, stub, or replace it, and resume CRAFTS only after the human completes the TODO or explicitly changes the scope.
 9. Do not mark issue acceptance criteria complete until verification passes and `A — Assess`, `F — Fix`, and `T — Tighten` are complete.
@@ -99,7 +99,7 @@ Full CRAFTS:
 - `R — Render`: write failing tests first, implement the minimum passing change, then refactor only as needed.
 - `A — Assess`: review the diff for scope, quality, reuse, behavior, and package hygiene.
 - `F — Fix`: address blocking assessment findings and rerun focused checks.
-- `T — Tighten`: apply `security-and-hardening` proportionately to the diff for security, privacy, secrets handling, unsafe IO, injection risks, and generated artifacts. For elevated work, map every C trust boundary to evidence, a finding, or explicit non-applicability; return blockers to F, then repeat T.
+- `T — Tighten`: apply `security-and-hardening` proportionately to the diff for security, privacy, secrets handling, unsafe IO, injection risks, and generated artifacts. For triggered work, map every C trust boundary to evidence, a finding, or explicit non-applicability; return blockers to F, then repeat T.
 - `S — Sharpen`: capture durable decisions and keep `PRD.md`, `ISSUES.md`, `AGENTS.md`, `CONTRIBUTING.md`, and issue notes evergreen and aligned to code.
 
 Lite CRAFTS:

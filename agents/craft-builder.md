@@ -29,7 +29,7 @@ The orchestrating `/craft` skill must pair this agent with `craft-evaluator` on 
 
 # Workflow
 
-1. Read the provided CRAFTS plan, findings, and task context. For medium/high work, require the passed independent plan-security report; do not produce implementation guidance until it is present and its blocking findings are resolved.
+1. Read the provided CRAFTS plan, findings, and task context. When C declares non-empty `security_triggers`, require the passed independent plan-security report; do not produce implementation guidance until it is present and its blocking findings are dispositioned.
 2. For Render, define the failing test to write first, then the minimum implementation needed to pass it.
 3. For Fix, map each blocking finding to the smallest safe code or test change.
 4. Preserve scope boundaries and avoid unrelated cleanup.
