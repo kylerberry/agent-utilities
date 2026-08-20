@@ -25,7 +25,7 @@ CRAFTS is a sequential phase-gate workflow. Do not plan or execute phases in par
 
 In HITL mode, the Render phase contains a mandatory pause. The human owns the critical decision-bearing logic; the agent owns everything before and after it.
 
-Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. Full-flow work runs the same plan counsel gate as `/craft` — `craft-plan-feasibility`, `craft-plan-scope`, and `craft-plan-coherence` on every task, plus `craft-security` in plan-security mode when `security_triggers` is non-empty — after C and before R. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS subagents in parallel, except the counsel reviewers with each other.
+Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. Full-flow work runs the same plan counsel gate as `/craft` — `craft-plan-feasibility` (feasibility and coherence) and `craft-plan-scope` on every task, plus `craft-security` in plan-security mode when `security_triggers` is non-empty — after C and before R. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS subagents in parallel, except the counsel reviewers with each other.
 
 When exact per-spawn model selection is available, the R/F builder and A evaluator must run on different but equal-capability models. For example, if `craft-builder` runs on one frontier/coding-capable model, spawn `craft-evaluator` on a different peer model rather than the same model family. If the runtime only supports tier aliases, keep both at `medium` and explicitly note that exact model diversity could not be enforced in the phase report.
 

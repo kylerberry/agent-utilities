@@ -16,9 +16,8 @@ agents/
 ├── craft-evaluator.md        # A — Assess
 ├── craft-security.md         # Security counsel lens and T — Tighten
 ├── craft-sharpener.md        # S — Sharpen
-├── craft-plan-feasibility.md # Plan counsel: can it be executed here?
+├── craft-plan-feasibility.md # Plan counsel: executable here & internally consistent
 ├── craft-plan-scope.md       # Plan counsel: exactly the criteria, no more
-├── craft-plan-coherence.md   # Plan counsel: internally consistent strategy
 └── crafts-builder.md         # End-to-end CRAFTS implementation agent
 ```
 
@@ -31,7 +30,7 @@ CRAFTS is a sequential delivery workflow:
 | Phase | Role | Purpose |
 | --- | --- | --- |
 | **C**onceptualize | `craft-planner` | Scope, acceptance criteria, tests, plan, and security triggers |
-| *Plan counsel* | `craft-plan-feasibility` · `craft-plan-scope` · `craft-plan-coherence` (+ `craft-security` when triggered) | Independent one-pass review of the C plan before Render |
+| *Plan counsel* | `craft-plan-feasibility` · `craft-plan-scope` (+ `craft-security` when triggered) | Independent one-pass review of the C plan before Render |
 | **R**ender | `craft-builder` | Test-first implementation: Red → Green → Refactor |
 | **A**ssess | `craft-evaluator` | Independent review of implementation and tests |
 | **F**ix | `craft-builder` | Minimal fixes for blocking findings |
@@ -46,7 +45,7 @@ C emits `security_triggers` from a closed vocabulary (`trust-boundary-change`, `
 
 Every full-flow task then runs the **plan counsel gate** between C and R:
 
-1. The C report goes verbatim to independent read-only reviewers: feasibility, scope guardian, and coherence always; security only when a trigger is declared. They may run in parallel; none sees another's findings first.
+1. The C report goes verbatim to independent read-only reviewers: feasibility-and-coherence and scope guardian always; security only when a trigger is declared. They may run in parallel; none sees another's findings first.
 2. Any blocking finding returns all reports to C, which revises once and dispositions every blocking finding: `adopted` (with the plan change) or `rejected` (with rationale).
 3. Render begins only when every blocking finding has a disposition — dispositions are the gate, not agreement. There is no counsel re-review round.
 4. Feasibility reports `probe_required` instead of guessing when an assumption needs execution to settle; the user supplies evidence, descopes, or confirms.

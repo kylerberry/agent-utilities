@@ -22,7 +22,7 @@ Start lite, then escalate to full if the task grows.
 
 CRAFTS is a sequential phase-gate workflow. Do not plan or execute phases in parallel per feature or issue; finish the current phase before moving to the next one.
 
-Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. Full-flow work additionally runs the **plan counsel gate** after C and before R: independent read-only reviewers (feasibility, scope, coherence — plus security when triggered) challenge the C plan once. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS phase subagents in parallel, with one exception: the counsel reviewers all read the same C report and may run in parallel with each other.
+Delegate each phase to its matching global subagent when the AgentSpawn tool is available, one call at a time. Full-flow work additionally runs the **plan counsel gate** after C and before R: independent read-only reviewers (feasibility-and-coherence and scope — plus security when triggered) challenge the C plan once. Wait for each report before proceeding, fixing blockers, or asking for clarification. Do not run CRAFTS phase subagents in parallel, with one exception: the counsel reviewers all read the same C report and may run in parallel with each other.
 
 When exact per-spawn model selection is available, the R/F builder and A evaluator must run on different but equal-capability models. For example, if `craft-builder` runs on one frontier/coding-capable model, spawn `craft-evaluator` on a different peer model rather than the same model family. If the runtime only supports tier aliases, keep both at `medium` and explicitly note that exact model diversity could not be enforced in the phase report.
 
@@ -58,9 +58,8 @@ After C and before R, the same C report goes — verbatim, unmodified — to ind
 
 | Lens | Agent | When |
 | --- | --- | --- |
-| Feasibility | `craft-plan-feasibility` | Every full-flow task |
+| Feasibility & coherence | `craft-plan-feasibility` | Every full-flow task |
 | Scope guardian | `craft-plan-scope` | Every full-flow task |
-| Coherence | `craft-plan-coherence` | Every full-flow task |
 | Security | `craft-security` (plan-security mode) | Only when `security_triggers` is non-empty |
 
 Rules:
@@ -140,6 +139,10 @@ For clearly low-risk config, scaffolding, and simple single-file fixes. Escalate
 - Never skip Assess and Tighten on code that crosses a trust boundary or handles user input.
 
 ---
+
+## Changelog (v3.1)
+
+- Merged the coherence lens into `craft-plan-feasibility` (feasibility-and-coherence): coherence's ordering/consistency checks overlap feasibility's sequencing work and its failures surface during Render anyway. The general counsel is now two reviewers — feasibility-and-coherence and scope — plus security when triggered. The coherence seat may return later as a third family's dedicated reviewer.
 
 ## Changelog (v3)
 
