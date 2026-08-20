@@ -63,7 +63,21 @@ cp -R skills/* /path/to/project/.agents/skills/
 cp -R agents/* /path/to/project/.agents/agents/
 ```
 
-Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent frontmatter and that `craft-security` can load the bundled `security-and-hardening` skill.
+Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent frontmatter and `craft-security` can load the bundled `security-and-hardening` skill.
+
+### Author-machine live install (symlinks)
+
+On the author's machine, `~/.agents` points at this repository so the global workflow always matches git — one copy, no sync step:
+
+```bash
+for f in craft-builder craft-evaluator craft-planner craft-security craft-sharpener craft-plan-feasibility craft-plan-scope crafts-builder; do
+  ln -sf ~/Projects/agent-utilities/agents/$f.md ~/.agents/agents/$f.md
+done
+ln -sfn ~/Projects/agent-utilities/skills/craft ~/.agents/skills/craft
+ln -sfn ~/Projects/agent-utilities/skills/craft-hitl ~/.agents/skills/craft-hitl
+```
+
+Edits in either place are the same files; commit from this repository. (`security-and-hardening` remains a real copy under `~/.agents/skills/` — link it the same way if you stop diverging it.)
 
 ## Design principles
 
