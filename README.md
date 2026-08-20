@@ -2,24 +2,48 @@
 
 A distributable CRAFTS toolkit for AI coding agents. It mirrors the current global `~/.agents` CRAFTS workflow and its role agents, including bundled security review guidance.
 
+```mermaid
+flowchart LR
+    C["C — Conceptualize"] --> FEAS["Feasibility counsel"]
+    C --> SCOPE["Scope counsel"]
+    C -. "security triggers" .-> PLANSEC["Plan-security counsel"]
+
+    FEAS --> GATE{"Blocking findings?"}
+    SCOPE --> GATE
+    PLANSEC --> GATE
+    GATE -- "yes" --> REVISE["C revises and dispositions"]
+    REVISE -. "no re-review" .-> R["R — Render"]
+    GATE -- "no" --> R
+
+    R -. "HITL seam" .-> HUMAN["TODO(human) pause"]
+    HUMAN --> R
+    R --> A["A — Assess"]
+    A -- "blockers" --> FA["F — Fix"]
+    FA --> A
+    A -- "pass" --> T["T — Tighten"]
+    T -- "P0" --> FT["F — Fix P0"]
+    FT --> T
+    T -- "pass; non-P0 forwarded" --> S["S — Sharpen"]
+```
+
 ## Contents
 
 ```text
 skills/
 ├── craft/                    # Autonomous CRAFTS workflow
 ├── craft-hitl/               # CRAFTS with a TODO(human) Render seam
-└── security-and-hardening/   # Threat modeling and secure-code review guidance
+├── guided-tour/              # One-concept-at-a-time codebase teaching
+└── security-and-hardening/   # Threat modeling and on-demand security references
 
 agents/
 ├── craft-planner.md          # C — Conceptualize
 ├── craft-builder.md          # R/F — Render and Fix
 ├── craft-evaluator.md        # A — Assess
 ├── craft-plan-security.md    # Pre-implementation security counsel lens
-├── craft-security-review.md   # T — Tighten final-diff review (P0 gate)
+├── craft-security-review.md  # T — Tighten final-diff review (P0 gate)
 ├── craft-sharpener.md        # S — Sharpen
 ├── craft-plan-feasibility.md # Plan counsel: executable here & internally consistent
-├── craft-plan-scope.md       # Plan counsel: exactly the criteria, no more
-└── crafts-builder.md         # End-to-end CRAFTS implementation agent
+└── craft-plan-scope.md       # Plan counsel: exactly the criteria, no more
 ```
 
 ## CRAFTS at a glance
@@ -52,7 +76,7 @@ Every full-flow task then runs the **plan counsel gate** between C and R:
 4. Feasibility reports `probe_required` instead of guessing when an assumption needs execution to settle; the user supplies evidence, descopes, or confirms.
 5. Counsel reports and dispositions forward to Assess, which treats thin rejections or cosmetic adoptions as blocking findings.
 
-Tighten maps every declared trust boundary to evidence, a P0 finding, or explicit non-applicability. It returns only P0 findings as blockers; Sharpen logs all non-P0 findings in the project's existing memory sink. The security agents carry bundled review guidance and have no external skill dependency. The included global roles use JSON C, counsel, plan-security, Tighten, and Sharpen reports; these are workflow contracts, not a substitute for runtime enforcement.
+Tighten maps every declared trust boundary to evidence, a P0 finding, or explicit non-applicability. It returns only P0 findings as blockers; Sharpen selects the project's existing memory sink for all non-P0 findings and the conductor records them. Security agents carry bundled review guidance with no external skill dependency. Role reports require named semantic fields; JSON is optional unless the host enforces a schema.
 
 ## Installation
 
@@ -68,17 +92,18 @@ Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent frontm
 
 ### Author-machine live install (symlinks)
 
-On the author's machine, `~/.agents` points at this repository so the global workflow always matches git — one copy, no sync step:
+On the author's machine, the listed entries under `~/.agents` point at this repository so the global workflow always matches git — one copy, no sync step:
 
 ```bash
-for f in craft-builder craft-evaluator craft-planner craft-plan-security craft-security-review craft-sharpener craft-plan-feasibility craft-plan-scope crafts-builder; do
+for f in craft-builder craft-evaluator craft-planner craft-plan-security craft-security-review craft-sharpener craft-plan-feasibility craft-plan-scope; do
   ln -sf ~/Projects/agent-utilities/agents/$f.md ~/.agents/agents/$f.md
 done
-ln -sfn ~/Projects/agent-utilities/skills/craft ~/.agents/skills/craft
-ln -sfn ~/Projects/agent-utilities/skills/craft-hitl ~/.agents/skills/craft-hitl
+for skill in craft craft-hitl guided-tour security-and-hardening; do
+  ln -sfn ~/Projects/agent-utilities/skills/$skill ~/.agents/skills/$skill
+done
 ```
 
-Edits in either place are the same files; commit from this repository.
+Edits through these links change the repository files; commit from this repository.
 
 ## Model routing
 
@@ -87,18 +112,19 @@ Agent frontmatter intentionally sets **no `model`** — in pi, frontmatter outra
 | Role | Tier | Author-machine pin |
 | --- | --- | --- |
 | C — planner | heavy | `openai-codex/gpt-5.6-sol` |
-| Counsel: feasibility, scope | light | `zai/glm-5.1` |
-| Counsel: security (plan mode) | heaviest available | `openai-codex/gpt-5.6-sol` |
+| Counsel: feasibility | medium | `zai/glm-5.2` |
+| Counsel: scope | light | `xai/grok-4.3` |
+| Counsel: security (plan mode) | heaviest available | `zai/glm-5.3` |
 | R/F — builder | medium, different family from evaluator | `zai/glm-5.2` |
-| A — evaluator | heavy, different family from builder | `openai-codex/gpt-5.6-sol` |
-| T — tighten | standard (per-run override from the pinned security model) | `openai-codex/gpt-5.6-terra` |
+| A — evaluator | heavy, different family from builder | `xai/grok-4.6` |
+| T — tighten | standard | `openai-codex/gpt-5.6-terra` |
 | S — sharpener | light | `openai-codex/gpt-5.6-luna` |
 
 Give every pin a `fallbackModels` chain (rate-limit and overload errors walk it automatically); keeping subscription-capped providers out of primary positions and fallback-only models in the chain degrades gracefully instead of failing the phase.
 
 ## Design principles
 
-- **Acceptance criteria remain the reference.** Assess reviews the test suite against original criteria, not just passing tests.
+- **Acceptance criteria remain the reference.** Assess reviews the test suite against the canonical criteria—provided verbatim or C-authored when absent—not just passing tests.
 - **Independent review reduces correlated blind spots.** Builders do not approve their own work; plan counsel challenges the plan before code exists, and elevated plan review is independent of planning and implementation.
 - **Security starts in planning.** Threat boundaries and abuse cases are considered before code exists, then rechecked against the final diff.
 - **Knowledge compounds.** Sharpen records durable lessons without turning ordinary fixes into documentation churn.
