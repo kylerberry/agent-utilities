@@ -1,7 +1,6 @@
 ---
 name: craft-plan-feasibility
 description: Feasibility-and-coherence lens of the CRAFTS plan counsel gate — can this plan actually be executed here, and does it hold together as one ordered strategy?
-model: medium
 context: none
 tools:
   allow:

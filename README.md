@@ -79,6 +79,22 @@ ln -sfn ~/Projects/agent-utilities/skills/craft-hitl ~/.agents/skills/craft-hitl
 
 Edits in either place are the same files; commit from this repository. (`security-and-hardening` remains a real copy under `~/.agents/skills/` — link it the same way if you stop diverging it.)
 
+## Model routing
+
+Agent frontmatter intentionally sets **no `model`** — in pi, frontmatter outranks `agentOverrides`, so a baked-in value would shadow each host's routing. Route per host via `subagents.agentOverrides` (or your harness's equivalent). The intended tiering:
+
+| Role | Tier | Author-machine pin |
+| --- | --- | --- |
+| C — planner | heavy | `openai-codex/gpt-5.6-sol` |
+| Counsel: feasibility, scope | light | `zai/glm-5.1` |
+| Counsel: security (plan mode) | heaviest available | `openai-codex/gpt-5.6-sol` |
+| R/F — builder | medium, different family from evaluator | `zai/glm-5.2` |
+| A — evaluator | heavy, different family from builder | `openai-codex/gpt-5.6-sol` |
+| T — tighten | standard (per-run override from the pinned security model) | `openai-codex/gpt-5.6-terra` |
+| S — sharpener | light | `openai-codex/gpt-5.6-luna` |
+
+Give every pin a `fallbackModels` chain (rate-limit and overload errors walk it automatically); keeping subscription-capped providers out of primary positions and fallback-only models in the chain degrades gracefully instead of failing the phase.
+
 ## Design principles
 
 - **Acceptance criteria remain the reference.** Assess reviews the test suite against original criteria, not just passing tests.

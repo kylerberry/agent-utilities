@@ -1,7 +1,6 @@
 ---
 name: craft-evaluator
 description: Run the A phase of CRAFTS to evaluate the diff for correctness, simplification, type safety, reuse, and verification gaps.
-model: medium
 context: none
 tools:
   allow:

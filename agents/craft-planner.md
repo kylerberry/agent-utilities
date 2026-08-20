@@ -1,7 +1,6 @@
 ---
 name: craft-planner
 description: Run the C phase of CRAFTS to define scope, tests, risks, gates, and an execution plan before coding.
-model: heavy
 context: none
 tools:
   allow:

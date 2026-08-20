@@ -1,7 +1,6 @@
 ---
 name: craft-security
 description: Run the elevated-risk plan-security checkpoint or T phase of CRAFTS for security and trust-boundary review.
-model: medium
 context: none
 tools:
   allow:

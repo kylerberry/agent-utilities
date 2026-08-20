@@ -1,7 +1,6 @@
 ---
 name: craft-plan-scope
 description: Scope-guardian lens of the CRAFTS plan counsel gate — does the plan cover exactly the acceptance criteria, no more and no less?
-model: medium
 context: none
 tools:
   allow:

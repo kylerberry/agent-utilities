@@ -109,7 +109,7 @@ Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when availab
 
 Apply `security-and-hardening` to the diff and fix findings.
 
-Use AgentSpawn with `subagent_type: "craft-security"` for this phase when available. Pass the task goal, changed files, verification output, and any trust boundaries identified during Conceptualize or Render; for triggered work, also pass C's declared security triggers and plan-security report.
+Use AgentSpawn with `subagent_type: "craft-security"` for this phase when available. Pass the task goal, changed files, verification output, and any trust boundaries identified during Conceptualize or Render; for triggered work, also pass C's declared security triggers and plan-security report. When exact per-spawn model selection is available, give Tighten a per-run standard-tier model (e.g. `terra`) so the diff review runs one tier below the pinned plan-security model.
 
 - Apply the skill proportionately to the changed surface, not as a generic scan.
 - For triggered work, account for every C trust boundary with evidence, a finding, or explicit non-applicability.

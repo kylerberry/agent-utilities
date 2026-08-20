@@ -1,7 +1,6 @@
 ---
 name: craft-sharpener
 description: Run the S phase of CRAFTS to keep product docs, issue notes, standards, and durable learnings evergreen.
-model: medium
 context: none
 tools:
   allow:

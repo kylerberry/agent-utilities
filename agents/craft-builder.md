@@ -1,7 +1,6 @@
 ---
 name: craft-builder
 description: Run the R or F phases of CRAFTS to test-drive implementation work or fix blocking findings from evaluation.
-model: medium
 context: none
 tools:
   allow:
