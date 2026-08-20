@@ -1,6 +1,6 @@
 # Agent Utilities
 
-A distributable CRAFTS toolkit for AI coding agents. It mirrors the current global `~/.agents` CRAFTS workflow, its role agents, and the `security-and-hardening` dependency skill.
+A distributable CRAFTS toolkit for AI coding agents. It mirrors the current global `~/.agents` CRAFTS workflow and its role agents, including bundled security review guidance.
 
 ## Contents
 
@@ -14,7 +14,8 @@ agents/
 ├── craft-planner.md          # C — Conceptualize
 ├── craft-builder.md          # R/F — Render and Fix
 ├── craft-evaluator.md        # A — Assess
-├── craft-security.md         # Security counsel lens and T — Tighten
+├── craft-plan-security.md    # Pre-implementation security counsel lens
+├── craft-security-review.md   # T — Tighten final-diff review (P0 gate)
 ├── craft-sharpener.md        # S — Sharpen
 ├── craft-plan-feasibility.md # Plan counsel: executable here & internally consistent
 ├── craft-plan-scope.md       # Plan counsel: exactly the criteria, no more
@@ -30,11 +31,11 @@ CRAFTS is a sequential delivery workflow:
 | Phase | Role | Purpose |
 | --- | --- | --- |
 | **C**onceptualize | `craft-planner` | Scope, acceptance criteria, tests, plan, and security triggers |
-| *Plan counsel* | `craft-plan-feasibility` · `craft-plan-scope` (+ `craft-security` when triggered) | Independent one-pass review of the C plan before Render |
+| *Plan counsel* | `craft-plan-feasibility` · `craft-plan-scope` (+ `craft-plan-security` when triggered) | Independent one-pass review of the C plan before Render |
 | **R**ender | `craft-builder` | Test-first implementation: Red → Green → Refactor |
 | **A**ssess | `craft-evaluator` | Independent review of implementation and tests |
 | **F**ix | `craft-builder` | Minimal fixes for blocking findings |
-| **T**ighten | `craft-security` | Security review with `security-and-hardening` |
+| **T**ighten | `craft-security-review` | Bundled final-diff security review; only P0 findings block |
 | **S**harpen | `craft-sharpener` | Durable documentation and process learning |
 
 Use `/craft` for autonomous work. Use `/craft-hitl` when Render must pause at a specific `TODO(human)` seam.
@@ -51,7 +52,7 @@ Every full-flow task then runs the **plan counsel gate** between C and R:
 4. Feasibility reports `probe_required` instead of guessing when an assumption needs execution to settle; the user supplies evidence, descopes, or confirms.
 5. Counsel reports and dispositions forward to Assess, which treats thin rejections or cosmetic adoptions as blocking findings.
 
-Tighten still maps every declared trust boundary to evidence, a finding, or explicit non-applicability, and Sharpen records one disposition—`guidance-update`, `owned-follow-up`, or `documented-non-generalizable`—only when Tighten finds a reusable security issue. The included global roles use JSON C, counsel, plan-security, and Tighten reports; these are workflow contracts, not a substitute for runtime enforcement.
+Tighten maps every declared trust boundary to evidence, a P0 finding, or explicit non-applicability. It returns only P0 findings as blockers; Sharpen logs all non-P0 findings in the project's existing memory sink. The security agents carry bundled review guidance and have no external skill dependency. The included global roles use JSON C, counsel, plan-security, Tighten, and Sharpen reports; these are workflow contracts, not a substitute for runtime enforcement.
 
 ## Installation
 
@@ -63,21 +64,21 @@ cp -R skills/* /path/to/project/.agents/skills/
 cp -R agents/* /path/to/project/.agents/agents/
 ```
 
-Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent frontmatter and `craft-security` can load the bundled `security-and-hardening` skill.
+Then invoke `/craft` or `/craft-hitl`. Ensure the host supports the agent frontmatter and bundled security-review guidance.
 
 ### Author-machine live install (symlinks)
 
 On the author's machine, `~/.agents` points at this repository so the global workflow always matches git — one copy, no sync step:
 
 ```bash
-for f in craft-builder craft-evaluator craft-planner craft-security craft-sharpener craft-plan-feasibility craft-plan-scope crafts-builder; do
+for f in craft-builder craft-evaluator craft-planner craft-plan-security craft-security-review craft-sharpener craft-plan-feasibility craft-plan-scope crafts-builder; do
   ln -sf ~/Projects/agent-utilities/agents/$f.md ~/.agents/agents/$f.md
 done
 ln -sfn ~/Projects/agent-utilities/skills/craft ~/.agents/skills/craft
 ln -sfn ~/Projects/agent-utilities/skills/craft-hitl ~/.agents/skills/craft-hitl
 ```
 
-Edits in either place are the same files; commit from this repository. (`security-and-hardening` remains a real copy under `~/.agents/skills/` — link it the same way if you stop diverging it.)
+Edits in either place are the same files; commit from this repository.
 
 ## Model routing
 

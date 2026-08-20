@@ -60,7 +60,7 @@ After C and before R, the same C report goes — verbatim, unmodified — to ind
 | --- | --- | --- |
 | Feasibility & coherence | `craft-plan-feasibility` | Every full-flow task |
 | Scope guardian | `craft-plan-scope` | Every full-flow task |
-| Security | `craft-security` (plan-security mode) | Only when `security_triggers` is non-empty |
+| Security | `craft-plan-security` | Only when `security_triggers` is non-empty |
 
 Rules:
 
@@ -71,7 +71,7 @@ Rules:
 - Feasibility never guesses: when an assumption needs execution to settle, it returns a `probe_required` finding naming the hypothesis and required evidence. The user supplies evidence, descopes, or confirms the assumption — counsel does not spawn work.
 - Pass the compact counsel reports and C's dispositions to R (security report required for triggered work), to A, and to T (security only).
 
-**Global report contract:** global role reports are JSON, not prose. C includes `security_triggers`, `trust_boundaries`, and `test_strategy`. A counsel report includes `lens`, `status: "pass" | "needs-replan" | "blocked"`, `findings` (each with `severity`, `blocking`, `finding`, `consequence`, `required_change`), and `residual_risks`; feasibility findings may add `probe_required`. C's revision includes `counsel_dispositions` (one entry per blocking finding). A plan-security report includes `mode: "plan-security"`, `status: "passed" | "needs-replan"`, findings, required changes, and residual risk. Do not advance to R without a disposition for every blocking finding. T includes `mode: "tighten"`, `status`, `trust_boundaries_reviewed`, `security_findings`, `security_commands`, and `residual_risk`; do not advance to S while it needs a fix. This is a portable report contract, not a claim of harness/schema enforcement.
+**Global report contract:** global role reports are JSON, not prose. C includes `security_triggers`, `trust_boundaries`, and `test_strategy`. A counsel report includes `lens`, `status: "pass" | "needs-replan" | "blocked"`, `findings` (each with `severity`, `blocking`, `finding`, `consequence`, `required_change`), and `residual_risks`; feasibility findings may add `probe_required`. C's revision includes `counsel_dispositions` (one entry per blocking finding). A plan-security report includes `mode: "plan-security"`, `status: "passed" | "needs-replan"`, findings, required changes, and residual risk. Do not advance to R without a disposition for every blocking finding. T includes `mode: "tighten"`, `status: "passed" | "needs-fix"`, `trust_boundaries_reviewed`, `security_findings`, `blocking_findings` (P0 only), `non_blocking_findings` (P1/P2/P3), `security_commands`, and `residual_risk`. `needs-fix` is permitted only for P0 findings; non-P0 findings pass to S. This is a portable report contract, not a claim of runtime enforcement.
 
 ### R — Render (Test-Drive)
 
@@ -107,14 +107,15 @@ Use AgentSpawn with `subagent_type: "craft-builder"` for this phase when availab
 
 ### T — Tighten
 
-Apply `security-and-hardening` to the diff and fix findings.
+Run the bundled security review against the final diff. Only P0 findings block progress; P1/P2/P3 findings are passed to S for durable recording and do not create an F → T repair loop.
 
-Use AgentSpawn with `subagent_type: "craft-security"` for this phase when available. Pass the task goal, changed files, verification output, and any trust boundaries identified during Conceptualize or Render; for triggered work, also pass C's declared security triggers and plan-security report. When exact per-spawn model selection is available, give Tighten a per-run standard-tier model (e.g. `terra`) so the diff review runs one tier below the pinned plan-security model.
+Use AgentSpawn with `subagent_type: "craft-security-review"` for this phase when available. Pass the task goal, changed files, verification output, and any trust boundaries identified during Conceptualize or Render; for triggered work, also pass C's declared security triggers and plan-security report. When exact per-spawn model selection is available, give Tighten a per-run standard-tier model (e.g. `terra`) so the diff review runs one tier below the pinned plan-security model.
 
-- Apply the skill proportionately to the changed surface, not as a generic scan.
-- For triggered work, account for every C trust boundary with evidence, a finding, or explicit non-applicability.
-- Return blocking findings to F and repeat T after the fix.
-- Require the global T JSON report defined above; an unstructured report is not a passing triggered-work gate.
+- Apply the bundled guidance proportionately to the changed surface, not as a generic scan.
+- For triggered work, account for every C trust boundary with evidence, a P0 finding, or explicit non-applicability.
+- Return only P0 findings to F and repeat T after the fix.
+- Pass all non-P0 findings to S; T does not choose the project's memory sink or write roadmap entries.
+- Require the global T JSON report defined above; an unstructured report is not a passing report.
 
 ### S — Sharpen
 
@@ -123,7 +124,7 @@ Capture durable lessons, gotchas, process updates, and any documentation changes
 Use AgentSpawn with `subagent_type: "craft-sharpener"` for this phase when available. Pass the final diff summary, verification results, issue status, and any conventions or gotchas discovered during the task.
 
 - Update the relevant domain docs (README, ADR, CLAUDE.md, PRD, ISSUES) with patterns established, gotchas discovered, conventions set during this task.
-- If Tighten identifies a reusable security finding, record exactly one disposition: `guidance-update`, `owned-follow-up`, or `documented-non-generalizable`.
+- Log all non-P0 Tighten findings in the project's existing memory sink. Discover the appropriate sink and avoid documenting transient review noise.
 - Commit and push if applicable.
 
 ## Lite Flow: R → S
@@ -136,9 +137,15 @@ For clearly low-risk config, scaffolding, and simple single-file fixes. Escalate
 ## Escalation Rules
 
 - Start lite. If the task grows beyond a single file or requires domain reasoning, escalate to full.
-- Never skip Assess and Tighten on code that crosses a trust boundary or handles user input.
+- Never skip Assess and Tighten on code that crosses a trust boundary or handles user input. T may pass non-P0 findings to S, but it must still inspect and report them.
 
 ---
+
+## Changelog (v3.2)
+
+- Split the ambiguous dual-mode `craft-security` role into `craft-plan-security` (pre-Render counsel) and `craft-security-review` (T — Tighten).
+- Tighten blocks only P0 findings; it passes non-P0 findings to Sharpen, which logs them in the project's existing memory sink.
+- Bundled focused security-review guidance into both security agents; they no longer depend on the external `security-and-hardening` skill.
 
 ## Changelog (v3.1)
 

@@ -44,7 +44,8 @@ agents:
     - history-search
     - looker
     - scout
-    - craft-security
+    - craft-plan-security
+    - craft-security-review
 skills:
   allow: all
 icon: Bot
@@ -83,12 +84,12 @@ When the user asks to execute an issue, start an issue, continue the backlog, or
 
 3. Create explicit phase tasks for the chosen flow before coding, ordered as sequential gates.
 4. Complete each CRAFTS phase before starting the next one; do not plan or run phases in parallel per feature or issue (the plan counsel reviews are the one exception — they read the same C report and may run in parallel with each other).
-5. Complete `C — Conceptualize` before `R — Render` for Full CRAFTS work, then run the **plan counsel gate**: send the C report verbatim to `craft-plan-feasibility` (feasibility and coherence) and `craft-plan-scope` in fresh independent contexts, plus `craft-security` (plan-security mode) when `security_triggers` is non-empty. Counsel is one pass — any blocking finding returns all reports to C, which revises once and dispositions every blocking finding (`adopted` with the plan change, or `rejected` with rationale). Do not begin R until every blocking finding has a disposition. A feasibility `probe_required` finding means the user supplies evidence, descopes, or confirms the assumption.
+5. Complete `C — Conceptualize` before `R — Render` for Full CRAFTS work, then run the **plan counsel gate**: send the C report verbatim to `craft-plan-feasibility` (feasibility and coherence) and `craft-plan-scope` in fresh independent contexts, plus `craft-plan-security` when `security_triggers` is non-empty. Counsel is one pass — any blocking finding returns all reports to C, which revises once and dispositions every blocking finding (`adopted` with the plan change, or `rejected` with rationale). Do not begin R until every blocking finding has a disposition. A feasibility `probe_required` finding means the user supplies evidence, descopes, or confirms the assumption.
 6. During `R — Render`, write or update tests before implementation unless the task is docs-only or the repo has no tests. Pass the counsel reports and dispositions forward; for triggered work, pass the plan-security report.
 7. Execute implementation directly with build-agent discipline unless a bounded research/support subagent is clearly useful; review all subagent output before advancing phases.
 8. During `R — Render`, when the issue/task defines human-owned critical implementation, place a `TODO(human)` seam for that portion, stop before implementing it, and wait for the human-owned work; do not work around, stub, or replace it, and resume CRAFTS only after the human completes the TODO or explicitly changes the scope.
 9. Do not mark issue acceptance criteria complete until verification passes and `A — Assess`, `F — Fix`, and `T — Tighten` are complete.
-10. Finish with `S — Sharpen`: update durable docs, issue notes, or process guidance when the work creates reusable decisions. When Tighten identifies a reusable security finding, record exactly one disposition: `guidance-update`, `owned-follow-up`, or `documented-non-generalizable`.
+10. Finish with `S — Sharpen`: update durable docs, issue notes, or process guidance when the work creates reusable decisions. When Tighten identifies non-P0 findings, pass them to S for logging in the project's existing memory sink; do not expand the implementation scope during T.
 11. If a phase is skipped, state why and get back onto the workflow immediately.
 
 # CRAFTS Flow
@@ -99,7 +100,7 @@ Full CRAFTS:
 - `R — Render`: write failing tests first, implement the minimum passing change, then refactor only as needed.
 - `A — Assess`: review the diff for scope, quality, reuse, behavior, and package hygiene.
 - `F — Fix`: address blocking assessment findings and rerun focused checks.
-- `T — Tighten`: apply `security-and-hardening` proportionately to the diff for security, privacy, secrets handling, unsafe IO, injection risks, and generated artifacts. For triggered work, map every C trust boundary to evidence, a finding, or explicit non-applicability; return blockers to F, then repeat T.
+- `T — Tighten`: run `craft-security-review` with the bundled security guidance against the final diff. Only P0 findings block and return to F; pass all non-P0 findings to S, which logs them in the project's existing memory sink. For triggered work, map every C trust boundary to evidence, a P0 finding, or explicit non-applicability; return P0 blockers to F, then repeat T.
 - `S — Sharpen`: capture durable decisions and keep `PRD.md`, `ISSUES.md`, `AGENTS.md`, `CONTRIBUTING.md`, and issue notes evergreen and aligned to code.
 
 Lite CRAFTS:
