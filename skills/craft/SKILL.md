@@ -1,27 +1,20 @@
 ---
 name: craft
 command: craft
-argument-hint: "Optional mode: full, lite, or hitl"
+argument-hint: "Optional: hitl"
 icon: Hammer
 description: >-
-  Phase-gate execution workflow for non-trivial tasks. Use full CRAFTS
-  (C→R→A→F→T→S), lite R→S for simple changes, or HITL mode when Render
-  contains a human-owned decision seam.
+  Phase-gate execution workflow. Always C→R→A→F→T→S. Use /craft-hitl when
+  Render contains a human-owned decision seam.
 ---
 
 # CRAFTS Workflow
 
-## Choose a mode
-
-- **Full:** business logic, multi-file work, domain changes, or any security trigger.
-- **Lite:** clearly low-risk config, scaffolding, docs, or a simple single-file fix.
-- **HITL:** full or lite flow with a mandatory human-owned seam during Render.
-
-Start lite when appropriate; escalate before editing if scope grows or a security trigger applies.
+Every run is `C → counsel → R → A → F → T → S`. There is no short path. Use `/craft-hitl` when Render must pause at a `TODO(human)` seam.
 
 ## Core contract
 
-CRAFTS is sequential: finish each gate before starting the next. Full flow is `C → R → A → F → T → S`; lite flow is `R → S`. Named role agents advise each phase; the conductor owns sequencing, edits, verification, and gate decisions. Counsel reviewers are the only agents that may run in parallel because they independently read the same C report.
+CRAFTS is sequential: finish each gate before starting the next. Named role agents advise each phase; the conductor owns sequencing, edits, verification, and gate decisions. Counsel reviewers are the only agents that may run in parallel because they independently read the same C report.
 
 The canonical acceptance criteria are the provided criteria verbatim, or C-authored criteria when none were provided. C records that provenance; counsel and A receive the canonical set unchanged, and A reviews both tests and implementation against it.
 
@@ -29,7 +22,46 @@ Host routing must preserve model-family diversity at the C→general-counsel, C�
 
 Reports must be concise and structured with the named fields below. JSON is optional unless the host enforces a schema.
 
-## Full flow
+## Metrics (required)
+
+Every CRAFT run is recorded by `craft-metrics`. The conductor emits **semantics only** — never invent tokens or cost. The host adapter (Pi extension / Claude Code hooks) stamps usage onto the open phase.
+
+At the start of the run, once:
+
+```bash
+RUN=$(craft-metrics start --mode full|hitl --host pi|claude-code --cwd "$PWD")
+```
+
+Keep `$RUN` for the rest of the session. If `start` is missed, `craft-metrics current --cwd "$PWD"` may recover an id the host already opened.
+
+At every gate:
+
+```bash
+craft-metrics enter --run "$RUN" --phase C|counsel|R|A|F|T|S --agent <role-agent>
+```
+
+Immediately after the phase report is in hand, before starting the next gate:
+
+```bash
+craft-metrics exit --run "$RUN" --phase C --security-triggers a,b --blocking-questions N --afk-hitl-status afk --criteria-provenance provided|authored
+craft-metrics exit --run "$RUN" --phase counsel --counsel-status pass|blocked|needs-replan [--blocking-findings N] [--probe-required]
+craft-metrics exit --run "$RUN" --phase A --verdict pass|fail --blocking-findings N
+craft-metrics exit --run "$RUN" --phase T --t-status pass|fail --p0 N --non-p0 N
+craft-metrics exit --run "$RUN" --phase S --docs-touched N
+# R and F: exit with no extra fields
+```
+
+HITL pause/resume: `craft-metrics pause|resume --run "$RUN"`. Switch to HITL mid-run with `craft-metrics mode --run "$RUN" --mode hitl`.
+
+When the run finishes or aborts:
+
+```bash
+craft-metrics end --run "$RUN" --outcome completed|aborted|blocked|hitl-paused
+```
+
+A missed emit is recoverable (host still records usage as `unattributed` or via named `craft-*` agents). A fabricated cost figure is not. Skip metrics only if the `craft-metrics` binary is missing.
+
+## Flow
 
 ### C — Conceptualize
 
@@ -106,10 +138,3 @@ Use `craft-sharpener`. Pass the final diff summary, verification results, issue 
 S identifies exact documentation updates and chooses the project's existing memory sink for non-P0 findings. In HITL mode, it captures the human-owned decision and rationale when durable. The conductor applies those updates, deduplicating existing entries and excluding transient noise.
 
 Modify git state only when the user or repository workflow explicitly requires it.
-
-## Lite flow
-
-1. **R — Render:** make the smallest correct change, using `craft-builder` when useful; test proportionately.
-2. **S — Sharpen:** capture durable documentation or memory updates through `craft-sharpener` when warranted.
-
-Lite HITL uses the same Render override. Escalate to full before editing when work crosses a trust boundary, handles untrusted input, grows beyond a simple change, or needs independent assessment.

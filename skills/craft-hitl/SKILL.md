@@ -1,7 +1,6 @@
 ---
 name: craft-hitl
 command: craft-hitl
-argument-hint: "Optional mode: full or lite"
 icon: Hand
 description: >-
   CRAFTS with mandatory human-in-the-loop gating at approved TODO(human)
@@ -22,4 +21,4 @@ During Render:
 4. Resume only after the human supplies the work or explicitly delegates it back.
 5. Read and verify the human's contribution before completing Render; remove the marker once integrated.
 
-For a simple change, use lite HITL (`R → S`). Escalate to full HITL before editing if scope grows or any `/craft` security trigger applies.
+Metrics: start the run with `--mode hitl`. At each Render stop call `craft-metrics pause --run "$RUN"`; after the human responds, `craft-metrics resume --run "$RUN"` before continuing.

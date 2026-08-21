@@ -68,7 +68,7 @@ Use `/craft` for autonomous work. Use `/craft-hitl` when Render must pause at a 
 
 C emits `security_triggers` from a closed vocabulary (`trust-boundary-change`, `untrusted-input`, `authentication-authorization`, `secrets-sensitive-data`, `external-integration`, `file-command-execution`, `ci-deploy-permissions`, `tenant-isolation`) instead of a subjective risk score; an empty list means low-risk work.
 
-Every full-flow task then runs the **plan counsel gate** between C and R:
+Every task then runs the **plan counsel gate** between C and R:
 
 1. The C report goes verbatim to independent read-only reviewers: feasibility-and-coherence and scope guardian always; security only when a trigger is declared. They may run in parallel; none sees another's findings first.
 2. Any blocking finding returns all reports to C, which revises once and dispositions every blocking finding: `adopted` (with the plan change) or `rejected` (with rationale).
