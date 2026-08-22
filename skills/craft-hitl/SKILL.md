@@ -21,4 +21,4 @@ During Render:
 4. Resume only after the human supplies the work or explicitly delegates it back.
 5. Read and verify the human's contribution before completing Render; remove the marker once integrated.
 
-Metrics: start the run with `--mode hitl`. At each Render stop call `craft-metrics pause --run "$RUN"`; after the human responds, `craft-metrics resume --run "$RUN"` before continuing.
+Metrics: start the run with `--mode hitl` and the same `--kind` rules as `/craft`. At each Render stop call `craft-metrics pause --run "$RUN"`; after the human responds, `craft-metrics resume --run "$RUN"` before continuing.

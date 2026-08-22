@@ -26,13 +26,24 @@ Reports must be concise and structured with the named fields below. JSON is opti
 
 Every CRAFT run is recorded by `craft-metrics`. The conductor emits **semantics only** — never invent tokens or cost. The host adapter (Pi extension / Claude Code hooks) stamps usage onto the open phase.
 
-At the start of the run, once:
+At the start of the run, once. Infer `--kind` from the **user request**, not from files you expect to touch. One value: the primary intent. If two apply, pick the one that would change how you'd read the phase costs.
+
+| `--kind` | Use when |
+| --- | --- |
+| `feature` | new behavior or API |
+| `bugfix` | restore intended behavior |
+| `refactor` | same behavior, different shape |
+| `scaffold` | empty structure / wiring, little behavior |
+| `docs` | skills, ADRs, README, comments-as-docs |
+| `chore` | deps, config, CI, version, metrics plumbing |
+
+Do not invent extra kinds. Security is `security_triggers` on C, not a kind. HITL is `--mode hitl`, not a kind.
 
 ```bash
-RUN=$(craft-metrics start --mode full|hitl --host pi|claude-code --cwd "$PWD")
+RUN=$(craft-metrics start --kind feature|bugfix|refactor|scaffold|docs|chore --mode full|hitl --host pi|claude-code --cwd "$PWD")
 ```
 
-Keep `$RUN` for the rest of the session. If `start` is missed, `craft-metrics current --cwd "$PWD"` may recover an id the host already opened.
+Keep `$RUN` for the rest of the session. If `start` is missed, `craft-metrics current --cwd "$PWD"` may recover an id the host already opened. Wrong guess: `craft-metrics kind --run "$RUN" --kind feature` once, after C, not later.
 
 At every gate:
 

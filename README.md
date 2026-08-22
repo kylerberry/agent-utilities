@@ -114,10 +114,10 @@ Agent frontmatter intentionally sets **no `model`** — in pi, frontmatter outra
 | C — planner | heavy | `openai-codex/gpt-5.6-sol` |
 | Counsel: feasibility | medium | `zai/glm-5.2` |
 | Counsel: scope | light | `xai/grok-4.3` |
-| Counsel: security (plan mode) | heaviest available | `zai/glm-5.3` |
+| Counsel: security (plan mode) | medium, different family from planner | `zai/glm-5.3` |
 | R/F — builder | medium, different family from evaluator | `zai/glm-5.2` |
 | A — evaluator | heavy, different family from builder | `xai/grok-4.6` |
-| T — tighten | standard | `openai-codex/gpt-5.6-terra` |
+| T — tighten | medium, different family from builder | `openai-codex/gpt-5.6-terra` |
 | S — sharpener | light | `openai-codex/gpt-5.6-luna` |
 
 Give every pin a `fallbackModels` chain (rate-limit and overload errors walk it automatically); keeping subscription-capped providers out of primary positions and fallback-only models in the chain degrades gracefully instead of failing the phase.
